@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="2.4" jmeter="2.9 r1437961">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="DRY Example - Test Fragment / Module Controller Example" enabled="true">
+      <stringProp name="TestPlan.comments">Create a Test Fragment at root of plan, then use Module Controller to include it throughout</stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">true</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+    </TestPlan>
+    <hashTree>
+      <TestFragmentController guiclass="TestFragmentControllerGui" testclass="TestFragmentController" testname="Mashery URL Signing Include" enabled="true"/>
+      <hashTree>
+        <BeanShellPreProcessor guiclass="TestBeanGUI" testclass="BeanShellPreProcessor" testname="Mashery URL signing" enabled="true">
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+          <boolProp name="resetInterpreter">true</boolProp>
+          <stringProp name="script">/**
+ * This script expects to recieve user-defined variables &quot;apiKey&quot; and &quot;sharedSecret&quot;, and will
+ * create a variable named &quot;sig&quot; with a temporarily valid Mashery signature, which can be used in
+ * tests e.g. &quot;...?api-key=${apiKey}&amp;sig=${sig}&quot;
+ **/
+
+import java.security.MessageDigest;
+import javax.xml.bind.DatatypeConverter;
+
+String curTime = String.valueOf(System.currentTimeMillis()/1000);
+String sigTime = vars.get(&quot;sigTime&quot;);
+//skip sig generation if we&apos;re within the same second as it will be identical
+if(!curTime.equals(sigTime)){
+	MessageDigest digest = (MessageDigest) vars.getObject(&quot;digest&quot;);
+	if(digest == null){
+		digest = MessageDigest.getInstance(&quot;SHA-256&quot;);
+		vars.putObject(&quot;digest&quot;,digest);	
+	}
+	digest.reset();
+	
+	StringBuilder builder = (StringBuilder) vars.getObject(&quot;builder&quot;);
+	if(builder==null){
+		builder = new StringBuilder();
+		vars.putObject(&quot;builder&quot;,builder);
+	}
+	builder.setLength(0);
+	
+	builder.append(vars.get(&quot;apiKey&quot;)).append(vars.get(&quot;sharedSecret&quot;)).append(curTime);
+	
+	byte[] hash = digest.digest(builder.toString().getBytes(&quot;UTF-8&quot;));
+	
+	vars.put(&quot;sig&quot;,DatatypeConverter.printHexBinary(hash));
+	vars.put(&quot;sigTime&quot;,curTime);
+}</stringProp>
+        </BeanShellPreProcessor>
+        <hashTree/>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Thread Group" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">1</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+        <longProp name="ThreadGroup.start_time">1381256162000</longProp>
+        <longProp name="ThreadGroup.end_time">1381256162000</longProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+      </ThreadGroup>
+      <hashTree>
+        <GenericController guiclass="LogicControllerGui" testclass="GenericController" testname="Do Something #1" enabled="true"/>
+        <hashTree>
+          <ModuleController guiclass="ModuleControllerGui" testclass="ModuleController" testname="Mashery URL signing (incl)" enabled="true">
+            <collectionProp name="ModuleController.node_path">
+              <stringProp name="-1227702913">WorkBench</stringProp>
+              <stringProp name="-1489581271">DRY Example - Test Fragment / Module Controller Example</stringProp>
+              <stringProp name="-1126233697">Mashery URL Signing Include</stringProp>
+            </collectionProp>
+          </ModuleController>
+          <hashTree/>
+        </hashTree>
+        <GenericController guiclass="LogicControllerGui" testclass="GenericController" testname="Do Something #2" enabled="true"/>
+        <hashTree>
+          <ModuleController guiclass="ModuleControllerGui" testclass="ModuleController" testname="Mashery URL signing (incl once again)" enabled="true">
+            <collectionProp name="ModuleController.node_path">
+              <stringProp name="-1227702913">WorkBench</stringProp>
+              <stringProp name="1427499847">Test Fragment / Module Controller Example</stringProp>
+              <stringProp name="-1126233697">Mashery URL Signing Include</stringProp>
+            </collectionProp>
+          </ModuleController>
+          <hashTree/>
+        </hashTree>
+      </hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>
